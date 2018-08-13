@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="explorer">
+    <button id="parent">&uparrow;</button>
+    <button id="current"></button> 
+    <ul id="files"></ul>
+  </div>
+  <textarea id="editor" class="mousetrap"></textarea>
+  <!-- <footer><script>document.write(process.versions.electron)</script></footer> -->
+  <script src="node_modules/mousetrap/mousetrap.min.js"></script>
+  <script>
+  const fs = require('fs')
+  const fsx = require('fs-extra')   // alternative 'rimraf'
+  const path = require('path')
+  const moment = require('moment')
+  const {dialog} = require('electron').remote;
+  window.$ = window.jQuery = require('jquery')
+
+  const editor = document.getElementById('editor')
+  const explorer = document.getElementById('explorer')
+
+  function readdir(filepath){
+    $('#current').text(filepath).attr('data-dir', filepath);
+    $('#parent').attr('data-dir', path.dirname(filepath))
+    fs.readdir(filepath, (err, files) => {
+    files.forEach(file => {
+      //var li = document.createElement("li");
+      $('#files').empty()
+        const fullpath = path.join(filepath, file)
+        fs.stat(fullpath, function(err, stats) {
+          if (stats.isDirectory()) {
+            $('#files').append(`<li data-dir="${fullpath}"><a href="#">${file}</a> | <span class="del">x</span></li>`)
+          }
+          else {
+            $('#files').append(`<li data-dir="${fullpath}">${file} | <span class="del">x</span> | <span class="edit">edit</span></li>`)
+            //li.appendChild(document.createTextNode(file));
+          }
+        })
+      })
+    })
+  }
+
+  $('#explorer').on('click', 'a', function() {
+    //console.log($(this).attr('data-dir'))
+    readdir($(this).parent().attr('data-dir'))
+  });
+
+  $('#explorer').on('click', 'span.del', function() {
+    const filepath = $(this).parent().attr('data-dir')
+    dialog.showMessageBox({
+      type: 'warning',
+      message: 'Do you want to delete?',
+      detail: filepath,
+      buttons: ['OK','Cancel'],
+      defaultId: 0
+    }, function(response){
+      if ( response === 0) {
+        // fs.unlink(filepath, function(err){
+        //   if (err)
+        //     console.error(err)
+        //   console.log('deleted')
+        // })
+        fsx.remove(filepath, function(err){
+          if (err) console.error(err)
+          console.log('deleted')
+        })
+      }
+    })
+  });
+
+  $('button').on('click', function() {
+    //console.log($(this).attr('data-dir'))
+    readdir($(this).attr('data-dir'))
+  });
+
+  $('#explorer').on('click', 'span.edit', function() {
+    const filepath = $(this).parent().attr('data-dir')
+    fs.readFile(filepath, (err, data) => {
+        if (err) console.error(err)
+        editor.value = data.toString()
+      })
+  });
+
+  readdir(__dirname)
+
+  Mousetrap(editor).bind('mod+s', function(e, combo) {
+      //console.log(__dirname)
+      const now = moment().format('YYYY-MM-DD-HHmmss')
+      //fs.writeFile(path.join(__dirname, now + '.md'), editor.value, _ => {
+      fs.writeFile(now + '.md', editor.value, _ => {
+        console.log(now);
+      })
+  })
+
+  Mousetrap.bind('mod+o', function(e, combo) {
+    //ipcRenderer.send('open-file-dialog')
+    dialog.showOpenDialog({
+      properties: ['openFile'],
+      defaultPath: __dirname,
+      filters: [
+        { name: 'Markdown Files', extensions: ['md', 'markdown', 'txt'] }
+      ]
+    }, files=> {
+      if (!files) return
+      fs.readFile(files[0], (err, data) => {
+        if (err) console.error(err)
+        editor.value = data.toString()
+      })
+    });
+  })
+  
+  // ipcRenderer.on('selected-directory', (event, path) => {
+  //   document.getElementById('selected-file').innerHTML = `You selected: ${path}`
+  // })
+  </script>
+</body>
+</html>

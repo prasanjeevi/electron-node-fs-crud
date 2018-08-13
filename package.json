@@ -1,0 +1,20 @@
+{
+  "name": "electron-node-fs-crud",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^2.0.7",
+    "fs-extra": "^7.0.0",
+    "jquery": "^3.3.1",
+    "moment": "^2.22.2",
+    "mousetrap": "^1.6.2"
+  }
+}
