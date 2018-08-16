@@ -14,6 +14,17 @@
     <ul id="files"></ul>
   </div>
   <textarea id="editor" class="mousetrap"></textarea>
+  <select id="language">
+    <option>html</option>
+    <option>css</option>
+    <option>javascript</option>
+    <option>markdown</option>
+    <option>csharp</option>
+    <option>java</option>
+    <option>python</option>
+    <option>go</option>
+  </select>
+  <div id="container" style="width:500px;height:300px;border:1px solid #ccc"></div>
   <!-- <footer><script>document.write(process.versions.electron)</script></footer> -->
   <script src="node_modules/mousetrap/mousetrap.min.js"></script>
   <script>
@@ -121,5 +132,62 @@
   //   document.getElementById('selected-file').innerHTML = `You selected: ${path}`
   // })
   </script>
+  <script>
+      // Monaco uses a custom amd loader that overrides node's require.
+      // Keep a reference to node's require so we can restore it after executing the amd loader file.
+      var nodeRequire = global.require;
+    </script>
+    <script src="node_modules/monaco-editor/min/vs/loader.js"></script>
+    <script>
+      // Save Monaco's amd require and restore Node's require
+      var amdRequire = global.require;
+      global.require = nodeRequire;
+    </script>
+    <script>
+      // require node modules before loader.js comes in
+      //const path2 = require('path');
+      function uriFromPath(_path) {
+        var pathName = path.resolve(_path).replace(/\\/g, '/');
+        if (pathName.length > 0 && pathName.charAt(0) !== '/') {
+          pathName = '/' + pathName;
+        }
+        return encodeURI('file://' + pathName);
+      }
+      amdRequire.config({
+        baseUrl: uriFromPath(path.join(__dirname, 'node_modules/monaco-editor/min'))
+      });
+      // workaround monaco-css not understanding the environment
+      self.module = undefined;
+      // workaround monaco-typescript not understanding the environment
+      self.process.browser = true;
+      amdRequire(['vs/editor/editor.main'], function() {
+      _editor = monaco.editor.create(document.getElementById('container'), {
+          // value: [
+          //   'function x() {',
+          //   '\tconsole.log("Hello world!");',
+          //   '}'
+          // ].join('\n'),
+          language: document.getElementById('language').value
+        });
+      });
+      $('#language').change(function(){
+        const language = $("#language option:selected").val();
+        monaco.editor.setModelLanguage(_editor.getModel(), language)
+
+        // if (!_editor) {
+        //   $('#container').empty();
+        //   _editor = monaco.editor.create(document.getElementById('container'), {
+        //     model: null,
+        //   });
+        // }
+        // var oldModel = _editor.getModel();
+        // var newModel = monaco.editor.createModel("", language);
+        // _editor.setModel(newModel);
+        // if (oldModel) {
+        //   oldModel.dispose();
+        // }
+      })
+      
+    </script>
 </body>
 </html>
